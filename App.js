@@ -4,22 +4,30 @@ Ext.define('CustomApp', {
     items:{ html:'<a href="https://help.rallydev.com/apps/2.0rc3/doc/">App SDK 2.0rc3 Docs</a>'},
     
     launch: function() {
-
+app = this;
         console.log('Our First App');
 
-        this._loadData();
+        app._loadData();
     },
 
     _loadData: function() {
-
+// var app = this;
     var myStore = Ext.create('Rally.data.wsapi.Store', {
-    model: 'User Story',
-    autoLoad: true,
+                        model: 'hierarchicalrequirement',
+                        autoLoad: true,
+                        limit: Infinity,
+                        pageSize: 1000000,
+                        // filters: [{
+                        //     property: 'PortfolioItemType',
+                        //     operator: '=',
+                        //     value: 'Capability'
+                        // }],
     listeners: {
         load: function(myStore, myData, success) {
+            // var app = this;
             //process data
             console.log('got data!', myStore, myData, success);
-this._loadGrid(myStore);
+app._loadGrid(myStore);
             // var myGrid = Ext.create('Rally.ui.grid.Grid', {
             // 	store: myStore,
             // 	columnCfgs: [
@@ -32,7 +40,7 @@ this._loadGrid(myStore);
             // this.add(myGrid);
             // console.log('what is this?', this);
         },
-        scope: this
+        scope: app
     },
     fetch: ['FormattedID', 'Name', 'Owner', 'ScheduleState']
 });
@@ -40,6 +48,7 @@ this._loadGrid(myStore);
     },
 
     _loadGrid: function(myStoryStore) {
+        // var app = this;
 var myGrid = Ext.create('Rally.ui.grid.Grid', {
             	store: myStoryStore,
             	columnCfgs: [
@@ -49,7 +58,7 @@ var myGrid = Ext.create('Rally.ui.grid.Grid', {
 
             console.log('my grid', myGrid);
 
-            this.add(myGrid);
+            app.add(myGrid);
             console.log('what is this?', this);
     }
 
