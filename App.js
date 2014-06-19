@@ -49,6 +49,41 @@ app._loadGrid(myStore);
 
     _loadGrid: function(myStoryStore) {
         // var app = this;
+var scoringFields = Ext.create('Ext.form.Panel', {
+    title: 'Scoring Weights',
+    width: 300,
+    bodyPadding: 10,
+    renderTo: Ext.getBody(),
+    items: [{
+        xtype: 'textfield',
+        name: 'npsimpact',
+        fieldLabel: 'NPS impact to # existing clients',
+        allowBlank: false  // requires a non-empty value
+    }, {
+        xtype: 'textfield',
+        name: 'cabpriority',
+        fieldLabel: 'CAB Priority',
+        vtype: 'email'  // requires value to be a valid email address format
+    }, {
+        xtype: 'textfield',
+        name: 'revuplift',
+        fieldLabel: 'Revenue Uplift to EE',
+        vtype: 'email'  // requires value to be a valid email address format
+    }, {
+        xtype: 'textfield',
+        name: 'prospects',
+        fieldLabel: '# of prospective clients from target list',
+        vtype: 'email'  // requires value to be a valid email address format
+    }, {
+        xtype: 'textfield',
+        name: 'winlossgap',
+        fieldLabel: 'Proven gap based on Win/loss analysis',
+        vtype: 'email'  // requires value to be a valid email address format
+    }]
+});
+            app.add(scoringFields);
+            console.log('scoringFields', this);
+
 var dropDown = Ext.create('Ext.button.Split', {
     renderTo: Ext.getBody(),
     text: 'Options',
@@ -65,7 +100,7 @@ var dropDown = Ext.create('Ext.button.Split', {
     })
 });
             app.add(dropDown);
-            console.log('what is this?', this);
+            console.log('dropDown menu', this);
 
 var myGrid = Ext.create('Rally.ui.grid.Grid', {
             	store: myStoryStore,
