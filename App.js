@@ -35,6 +35,7 @@ Ext.define('CustomApp', {
           listeners: {
             ready: function(combobox) {             // on ready: during initialization of the app, once Iterations are loaded, lets go get Defect Severities
                  this._loadSeverities();
+                console.log('look', combobox.getRecord().get('value'));
            },
         select: function(combobox, records) {   // on select: after the app has fully loaded, when the user 'select's an iteration, lets just relaod the data
                  this._loadData();
@@ -50,12 +51,14 @@ Ext.define('CustomApp', {
     _loadSeverities: function() {
         this.severityComboBox = Ext.create('Rally.ui.combobox.FieldValueComboBox', {
           model: 'portfolioItem/Capability',
-          field: 'PortfolioItemType',
-          fieldLabel: 'PortfolioItemType',
+          field: 'InvestmentCategory',
+          fieldLabel: 'InvestmentCategory',
           labelAlign: 'right',
           listeners: {
             ready: function(combobox) {             // this is the last 'data' pulldown we're loading so both events go to just load the actual defect data
                  this._loadData();
+                console.log('look2', combobox.getRecord());
+
            },
             select: function(combobox, records) {
                  this._loadData();
@@ -71,7 +74,7 @@ Ext.define('CustomApp', {
     // Get data from Rally
     _loadData: function() {
 
-      var selectedIterRef = this.iterComboBox.getRecord().get('Owner');              // the _ref is unique, unlike the iteration name that can change; lets query on it instead!
+      var selectedIterRef = this.iterComboBox.getRecord().get('value');              // the _ref is unique, unlike the iteration name that can change; lets query on it instead!
       var selectedSeverityValue = this.severityComboBox.getRecord().get('value');   // remember to console log the record to see the raw data and relize what you can pluck out
 
       console.log('selected iter', selectedIterRef);
@@ -84,7 +87,7 @@ Ext.define('CustomApp', {
               value: selectedIterRef
             },
             {
-              property: 'PortfolioItemType',
+              property: 'InvestmentCategory',
               operation: '=',
               value: selectedSeverityValue
             }
@@ -102,7 +105,7 @@ Ext.define('CustomApp', {
         this.defectStore = Ext.create('Rally.data.wsapi.Store', {     // create defectStore on the App (via this) so the code above can test for it's existence!
           model: 'PortfolioItem/Capability',
           autoLoad: true,                         // <----- Don't forget to set this to true! heh
-          // filters: myFilters,
+          filters: myFilters,
           listeners: {
               load: function(myStore, myData, success) {
                   console.log('got data!', myStore, myData);
@@ -112,7 +115,7 @@ Ext.define('CustomApp', {
               },
               scope: this                         // This tells the wsapi data store to forward pass along the app-level context into ALL listener functions
           },
-          fetch: ['FormattedID', 'Name', 'Owner']   // Look in the WSAPI docs online to see all fields available!
+          fetch: ['FormattedID', 'Name', 'Owner', 'InvestmentCategory']   // Look in the WSAPI docs online to see all fields available!
         });
       }
     },
@@ -123,7 +126,7 @@ Ext.define('CustomApp', {
       this.defectGrid = Ext.create('Rally.ui.grid.Grid', {
         store: myDefectStore,
         columnCfgs: [         // Columns to display; must be the same names specified in the fetch: above in the wsapi data store
-          'FormattedID', 'Name', 'Owner'
+          'FormattedID', 'Name', 'Owner', 'InvestmentCategory'
         ]
       });
 
