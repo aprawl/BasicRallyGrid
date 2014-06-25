@@ -1,147 +1,134 @@
 Ext.define('CustomApp', {
-    extend: 'Rally.app.App',
-    componentCls: 'app',
-    items:{ html:'<a href="https://help.rallydev.com/apps/2.0rc3/doc/">App SDK 2.0rc3 Docs</a>'},
-    
+    extend: 'Rally.app.App',      // The parent class manages the app 'lifecycle' and calls launch() when ready
+    componentCls: 'app',          // CSS styles found in app.css
+
+
+    defectStore: undefined,       // app level references to the store and grid for easy access in various methods
+    defectGrid: undefined,
+
+    // Entry Point to App
     launch: function() {
-app = this;
-        console.log('Our First App');
 
-        app._loadData();
+      console.log('our second app');     // see console api: https://developers.google.com/chrome-developer-tools/docs/console-api
+
+      this.pulldownContainer = Ext.create('Ext.container.Container', {    // this container lets us control the layout of the pulldowns; they'll be added below
+        id: 'pulldown-container-id',
+        layout: {
+                type: 'hbox',           // 'horizontal' layout
+                align: 'stretch'
+            }
+      });
+
+      this.add(this.pulldownContainer); // must add the pulldown container to the app to be part of the rendering lifecycle, even though it's empty at the moment
+
+      this._loadIterations();
     },
 
+    // create iteration pulldown and load iterations
+    _loadIterations: function() {
+        this.iterComboBox = Ext.create('Rally.ui.combobox.FieldValueComboBox', {
+          model: 'portfolioItem/Capability',
+          field: 'Owner',
+          fieldLabel: 'Owner',
+          labelAlign: 'right',
+          width: 300,
+          listeners: {
+            ready: function(combobox) {             // on ready: during initialization of the app, once Iterations are loaded, lets go get Defect Severities
+                 this._loadSeverities();
+           },
+        select: function(combobox, records) {   // on select: after the app has fully loaded, when the user 'select's an iteration, lets just relaod the data
+                 this._loadData();
+           },
+           scope: this
+         }
+        });
+
+        this.pulldownContainer.add(this.iterComboBox);   // add the iteration list to the pulldown container so it lays out horiz, not the app!
+     },
+
+    // create defect severity pulldown then load data
+    _loadSeverities: function() {
+        this.severityComboBox = Ext.create('Rally.ui.combobox.FieldValueComboBox', {
+          model: 'portfolioItem/Capability',
+          field: 'PortfolioItemType',
+          fieldLabel: 'PortfolioItemType',
+          labelAlign: 'right',
+          listeners: {
+            ready: function(combobox) {             // this is the last 'data' pulldown we're loading so both events go to just load the actual defect data
+                 this._loadData();
+           },
+            select: function(combobox, records) {
+                 this._loadData();
+           },
+           scope: this                              // <--- don't for get to pass the 'app' level scope into the combo box so the async event functions can call app-level func's!
+         }
+
+        });
+
+        this.pulldownContainer.add(this.severityComboBox);    // add the severity list to the pulldown container so it lays out horiz, not the app!
+     },
+
+    // Get data from Rally
     _loadData: function() {
-// var app = this;
-    var myStore = Ext.create('Rally.data.wsapi.Store', {
-                        model: 'hierarchicalrequirement',
-                        autoLoad: true,
-                        limit: Infinity,
-                        pageSize: 1000000,
-                        // filters: [{
-                        //     property: 'PortfolioItemType',
-                        //     operator: '=',
-                        //     value: 'Capability'
-                        // }],
-    listeners: {
-        load: function(myStore, myData, success) {
-            // var app = this;
-            //process data
-            console.log('got data!', myStore, myData, success);
-app._loadGrid(myStore);
-            // var myGrid = Ext.create('Rally.ui.grid.Grid', {
-            // 	store: myStore,
-            // 	columnCfgs: [
-            // 	'FormattedID', 'Name', 'Owner', 'ScheduleState'
-            // 	]
-            // });
 
-            // console.log('my grid', myGrid);
+      var selectedIterRef = this.iterComboBox.getRecord().get('Owner');              // the _ref is unique, unlike the iteration name that can change; lets query on it instead!
+      var selectedSeverityValue = this.severityComboBox.getRecord().get('value');   // remember to console log the record to see the raw data and relize what you can pluck out
 
-            // this.add(myGrid);
-            // console.log('what is this?', this);
-        },
-        scope: app
+      console.log('selected iter', selectedIterRef);
+      console.log('selected severity', selectedSeverityValue);
+
+      var myFilters = [                   // in this format, these are AND'ed together; use Rally.data.wsapi.Filter to create programatic AND/OR constructs
+            {
+              property: 'Owner',
+              operation: '=',
+              value: selectedIterRef
+            },
+            {
+              property: 'PortfolioItemType',
+              operation: '=',
+              value: selectedSeverityValue
+            }
+          ];
+
+      // if store exists, just load new data
+      if (this.defectStore) {
+        console.log('store exists');
+        this.defectStore.setFilter(myFilters);
+        this.defectStore.load();
+
+      // create store
+      } else {
+        console.log('creating store');
+        this.defectStore = Ext.create('Rally.data.wsapi.Store', {     // create defectStore on the App (via this) so the code above can test for it's existence!
+          model: 'PortfolioItem/Capability',
+          autoLoad: true,                         // <----- Don't forget to set this to true! heh
+          // filters: myFilters,
+          listeners: {
+              load: function(myStore, myData, success) {
+                  console.log('got data!', myStore, myData);
+                  if (!this.defectGrid) {           // only create a grid if it does NOT already exist
+                    this._createGrid(myStore);      // if we did NOT pass scope:this below, this line would be incorrectly trying to call _createGrid() on the store which does not exist.
+                  }
+              },
+              scope: this                         // This tells the wsapi data store to forward pass along the app-level context into ALL listener functions
+          },
+          fetch: ['FormattedID', 'Name', 'Owner']   // Look in the WSAPI docs online to see all fields available!
+        });
+      }
     },
-    fetch: ['FormattedID', 'Name', 'Owner', 'ScheduleState']
-});
-    
-    },
 
-    _loadGrid: function(myStoryStore) {
-        // var app = this;
-var scoringFields = Ext.create('Ext.form.Panel', {
-    title: 'Scoring Weights',
-    width: 300,
-    bodyPadding: 10,
-    renderTo: Ext.getBody(),
-    items: [{
-        xtype: 'textfield',
-        name: 'npsimpact',
-        fieldLabel: 'NPS impact to # existing clients',
-        allowBlank: false  // requires a non-empty value
-    }, {
-        xtype: 'textfield',
-        name: 'cabpriority',
-        fieldLabel: 'CAB Priority',
-        vtype: 'email'  // requires value to be a valid email address format
-    }, {
-        xtype: 'textfield',
-        name: 'revuplift',
-        fieldLabel: 'Revenue Uplift to EE',
-        vtype: 'email'  // requires value to be a valid email address format
-    }, {
-        xtype: 'textfield',
-        name: 'prospects',
-        fieldLabel: '# of prospective clients from target list',
-        vtype: 'email'  // requires value to be a valid email address format
-    }, {
-        xtype: 'textfield',
-        name: 'winlossgap',
-        fieldLabel: 'Proven gap based on Win/loss analysis',
-        vtype: 'email'  // requires value to be a valid email address format
-    }]
-});
-            app.add(scoringFields);
-            console.log('scoringFields', this);
+    // Create and Show a Grid of given defect
+    _createGrid: function(myDefectStore) {
 
-var dropDown = Ext.create('Ext.button.Split', {
-    renderTo: Ext.getBody(),
-    text: 'Options',
-    // handle a click on the button itself
-    handler: function() {
-        alert("The button was clicked");
-    },
-    menu: new Ext.menu.Menu({
-        items: [
-            // these will render as dropdown menu items when the arrow is clicked:
-            {text: 'Item 1', handler: function(){ alert("Item 1 clicked"); }},
-            {text: 'Item 2', handler: function(){ alert("Item 2 clicked"); }}
+      this.defectGrid = Ext.create('Rally.ui.grid.Grid', {
+        store: myDefectStore,
+        columnCfgs: [         // Columns to display; must be the same names specified in the fetch: above in the wsapi data store
+          'FormattedID', 'Name', 'Owner'
         ]
-    })
-});
-            app.add(dropDown);
-            console.log('dropDown menu', this);
+      });
 
-var myGrid = Ext.create('Rally.ui.grid.Grid', {
-            	store: myStoryStore,
-            	columnCfgs: [
-            	'FormattedID', 'Name', 'Owner', 'ScheduleState'
-            	]
-            });
+      this.add(this.defectGrid);       // add the grid Component to the app-level Container (by doing this.add, it uses the app container)
 
-            console.log('my grid', myGrid);
-
-            app.add(myGrid);
-            console.log('what is this?', this);
     }
 
-// launch: function() {
-        //Write app code here
-        // console.log('Our First App');
-
-//         var myStore = Ext.create('Rally.data.wsapi.Store', {
-//     model: 'User Story',
-//     autoLoad: true,
-//     listeners: {
-//         load: function(myStore, myData, success) {
-//             //process data
-//             console.log('got data!', myStore, myData, success);
-
-//             var myGrid = Ext.create('Rally.ui.grid.Grid', {
-//             	store: myStore,
-//             	columnCfgs: [
-//             	'FormattedID', 'Name', 'Owner', 'ScheduleState'
-//             	]
-//             });
-
-//             console.log('my grid', myGrid);
-
-//             this.add(myGrid);
-//             console.log('what is this?', this);
-//         },
-//         scope: this
-//     },
-//     fetch: ['FormattedID', 'Name', 'Owner', 'ScheduleState']
-// });
-//     }
 });
