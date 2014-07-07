@@ -28,8 +28,8 @@ Ext.define('CustomApp', {
     _loadIterations: function() {
         this.iterComboBox = Ext.create('Rally.ui.combobox.FieldValueComboBox', {
           model: 'portfolioItem/Capability',
-          field: 'Owner',
-          fieldLabel: 'Owner',
+          field: 'c_ECPPlatformRelease',
+          fieldLabel: 'Release',
           labelAlign: 'right',
           width: 300,
           listeners: {
@@ -82,7 +82,7 @@ Ext.define('CustomApp', {
 
       var myFilters = [                   // in this format, these are AND'ed together; use Rally.data.wsapi.Filter to create programatic AND/OR constructs
             {
-              property: 'Owner',
+              property: 'c_ECPPlatformRelease',
               operation: '=',
               value: selectedIterRef
             },
