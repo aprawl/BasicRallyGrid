@@ -500,7 +500,7 @@ app = this;
     _loadData: function() {
 // var app = this;
     var myStore = Ext.create('Rally.data.wsapi.Store', {
-                        model: 'hierarchicalrequirement',
+                        model: 'PortfolioItem/Capability',
                         autoLoad: true,
                         limit: Infinity,
                         pageSize: 1000000,
@@ -589,12 +589,12 @@ var scoringFields = Ext.create('Ext.form.Panel', {
             console.log('scoringFields', this);
 
 var testButton = Ext.create('Ext.Button', {
-    text     : 'Button',
+    text     : 'Export Table',
     renderTo : Ext.getBody(),
     listeners: {
         click: function(sender, eventArgs) {
     var buttonValue = eventArgs.value;
-    $('#rallygridview-1031-table').tableExport({type:'excel',escape:'true'});
+    $('#rallygridview-1030-table').tableExport({type:'excel',escape:'true'});
     // tableToExcel('mashup_table', 'Reviews Report Table');
 },
     }
@@ -625,19 +625,19 @@ var myGrid = Ext.create('Rally.ui.grid.Grid', {
             	store: myStoryStore,
             	            // plugins : new Sch.plugin.ExcelExport(),
                 columnCfgs: [
-            	'FormattedID', 'Name', 'Owner', 'ScheduleState'
+            	'FormattedID', 'Name', 'Owner'
             	],
-                buttons : [
-                {
-                    scale: 'large',
-                    iconCls : 'excel',
-                    text : 'Export schedule to Excel',
-                    handler : function(btn) {
-                        myGrid.exportToExcel();
-                    },
-                    scope : this
-                }
-            ]
+            //     buttons : [
+            //     {
+            //         scale: 'large',
+            //         iconCls : 'excel',
+            //         text : 'Export schedule to Excel',
+            //         handler : function(btn) {
+            //             myGrid.exportToExcel();
+            //         },
+            //         scope : this
+            //     }
+            // ]
             });
 
             console.log('my grid', myGrid);
