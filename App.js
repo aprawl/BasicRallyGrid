@@ -473,85 +473,92 @@ jQuery.base64 = ( function( $ ) {
             }
         });
     })(jQuery);
-        
-
-
-
-
-
-
 
 
 
 
 
 Ext.define('CustomApp', {
-    extend: 'Rally.app.App',
-    componentCls: 'app',
-    items:{ html:'<a href="https://help.rallydev.com/apps/2.0rc3/doc/">App SDK 2.0rc3 Docs</a>'},
-    
+    extend: 'Rally.app.App',      // The parent class manages the app 'lifecycle' and calls launch() when ready
+    componentCls: 'app',          // CSS styles found in app.css
+
+
+    defectStore: undefined,       // app level references to the store and grid for easy access in various methods
+    defectGrid: undefined,
+
+    // Entry Point to App
     launch: function() {
-app = this;
-        console.log('Our First App');
 
-        app._loadData();
+      console.log('our second app');     // see console api: https://developers.google.com/chrome-developer-tools/docs/console-api
+
+      this.pulldownContainer = Ext.create('Ext.container.Container', {    // this container lets us control the layout of the pulldowns; they'll be added below
+        id: 'pulldown-container-id',
+        layout: {
+                type: 'hbox',           // 'horizontal' layout
+                align: 'stretch'
+            }
+      });
+
+      this.add(this.pulldownContainer); // must add the pulldown container to the app to be part of the rendering lifecycle, even though it's empty at the moment
+
+      this._loadIterations();
     },
 
+    // create iteration pulldown and load iterations
+    _loadIterations: function() {
+        this.iterComboBox = Ext.create('Rally.ui.combobox.FieldValueComboBox', {
+          model: 'portfolioItem/Capability',
+          field: 'c_ECPPlatformRelease',
+          fieldLabel: 'Release',
+          labelAlign: 'right',
+          width: 300,
+          listeners: {
+            ready: function(combobox) {             // on ready: during initialization of the app, once Iterations are loaded, lets go get Defect Severities
+                 this._loadSeverities();
+                console.log('look', combobox.getRecord().get('value'));
+           },
+        select: function(combobox, records) {   // on select: after the app has fully loaded, when the user 'select's an iteration, lets just relaod the data
+                 this._loadData();
+           },
+           scope: this
+         }
+        });
+
+        this.pulldownContainer.add(this.iterComboBox);   // add the iteration list to the pulldown container so it lays out horiz, not the app!
+     },
+
+    // create defect severity pulldown then load data
+    _loadSeverities: function() {
+        this.severityComboBox = Ext.create('Rally.ui.combobox.FieldValueComboBox', {
+          model: 'portfolioItem/Capability',
+          field: 'InvestmentCategory',
+          fieldLabel: 'InvestmentCategory',
+          labelAlign: 'right',
+          listeners: {
+            ready: function(combobox) {             // this is the last 'data' pulldown we're loading so both events go to just load the actual defect data
+                 this._loadData();
+                console.log('look2', combobox.getRecord());
+
+           },
+            select: function(combobox, records) {
+                 this._loadData();
+           },
+           scope: this                              // <--- don't for get to pass the 'app' level scope into the combo box so the async event functions can call app-level func's!
+         }
+
+        });
+
+        this.pulldownContainer.add(this.severityComboBox);    // add the severity list to the pulldown container so it lays out horiz, not the app!
+     },
+
+    // Get data from Rally
     _loadData: function() {
-// var app = this;
-    var myStore = Ext.create('Rally.data.wsapi.Store', {
-                        model: 'PortfolioItem/Capability',
-                        autoLoad: true,
-                        limit: Infinity,
-                        pageSize: 1000000,
-                        // filters: [{
-                        //     property: 'PortfolioItemType',
-                        //     operator: '=',
-                        //     value: 'Capability'
-                        // }],
-    listeners: {
-        load: function(myStore, myData, success) {
-            // var app = this;
-            //process data
-            console.log('got data!', myStore, myData, success);
-app._loadGrid(myStore);
-            // var myGrid = Ext.create('Rally.ui.grid.Grid', {
-            // 	store: myStore,
-            // 	columnCfgs: [
-            // 	'FormattedID', 'Name', 'Owner', 'ScheduleState'
-            // 	]
-            // });
 
-            // console.log('my grid', myGrid);
+      var selectedIterRef = this.iterComboBox.getRecord().get('value');              // the _ref is unique, unlike the iteration name that can change; lets query on it instead!
+      var selectedSeverityValue = this.severityComboBox.getRecord().get('value');   // remember to console log the record to see the raw data and relize what you can pluck out
 
-            // this.add(myGrid);
-            // console.log('what is this?', this);
-        },
-        scope: app
-    },
-    fetch: ['FormattedID', 'Name', 'Owner', 'ScheduleState']
-});
-    
-    },
-
-    _loadGrid: function(myStoryStore) {
-        // var app = this;
-var tableToExcel = (function() {
-      var uri = 'data:application/vnd.ms-excel;base64,'
-        , template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>{table}</table></body></html>'
-        , base64 = function(s) { return window.btoa(unescape(encodeURIComponent(s))) }
-        , format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) }
-      return function(table, name) {
-        if (!table.nodeType) table = document.getElementById(table)
-        var ctx = {worksheet: name || 'Worksheet', table: table.innerHTML}
-        window.location.href = uri + base64(format(template, ctx))
-      }
-    })();
-
-var onClicked = function(sender, eventArgs) {
-    var buttonValue = eventArgs.value;
-    tableToExcel('mashup_table', 'Reviews Report Table');
-};
+      console.log('selected iter', selectedIterRef);
+      console.log('selected severity', selectedSeverityValue);
 
 var scoringFields = Ext.create('Ext.form.Panel', {
     title: 'Scoring Weights',
@@ -585,7 +592,7 @@ var scoringFields = Ext.create('Ext.form.Panel', {
         vtype: 'email'  // requires value to be a valid email address format
     }]
 });
-            app.add(scoringFields);
+            this.add(scoringFields);
             console.log('scoringFields', this);
 
 var testButton = Ext.create('Ext.Button', {
@@ -594,85 +601,72 @@ var testButton = Ext.create('Ext.Button', {
     listeners: {
         click: function(sender, eventArgs) {
     var buttonValue = eventArgs.value;
-    $('#rallygridview-1030-table').tableExport({type:'excel',escape:'true'});
+    $('#rallygridview-1028-table').tableExport({type:'excel',escape:'true'});
     // tableToExcel('mashup_table', 'Reviews Report Table');
 },
     }
 });
 
-         app.add(testButton);
+         this.add(testButton);
             console.log('testButton', this);
 
-var dropDown = Ext.create('Ext.button.Split', {
-    renderTo: Ext.getBody(),
-    text: 'Options',
-    // handle a click on the button itself
-    handler: function() {
-        alert("The button was clicked");
+
+
+
+
+
+      var myFilters = [                   // in this format, these are AND'ed together; use Rally.data.wsapi.Filter to create programatic AND/OR constructs
+            {
+              property: 'c_ECPPlatformRelease',
+              operation: '=',
+              value: selectedIterRef
+            },
+            {
+              property: 'InvestmentCategory',
+              operation: '=',
+              value: selectedSeverityValue
+            }
+          ];
+
+      // if store exists, just load new data
+      if (this.defectStore) {
+        console.log('store exists');
+        this.defectStore.setFilter(myFilters);
+        this.defectStore.load();
+
+      // create store
+      } else {
+        console.log('creating store');
+        this.defectStore = Ext.create('Rally.data.wsapi.Store', {     // create defectStore on the App (via this) so the code above can test for it's existence!
+          model: 'PortfolioItem/Capability',
+          autoLoad: true,                         // <----- Don't forget to set this to true! heh
+          filters: myFilters,
+          listeners: {
+              load: function(myStore, myData, success) {
+                  console.log('got data!', myStore, myData);
+                  if (!this.defectGrid) {           // only create a grid if it does NOT already exist
+                    this._createGrid(myStore);      // if we did NOT pass scope:this below, this line would be incorrectly trying to call _createGrid() on the store which does not exist.
+                  }
+              },
+              scope: this                         // This tells the wsapi data store to forward pass along the app-level context into ALL listener functions
+          },
+          fetch: ['FormattedID', 'Name', 'Owner', 'InvestmentCategory']   // Look in the WSAPI docs online to see all fields available!
+        });
+      }
     },
-    menu: new Ext.menu.Menu({
-        items: [
-            // these will render as dropdown menu items when the arrow is clicked:
-            {text: 'Item 1', handler: function(){ alert("Item 1 clicked"); }},
-            {text: 'Item 2', handler: function(){ alert("Item 2 clicked"); }}
+
+    // Create and Show a Grid of given defect
+    _createGrid: function(myDefectStore) {
+
+      this.defectGrid = Ext.create('Rally.ui.grid.Grid', {
+        store: myDefectStore,
+        columnCfgs: [         // Columns to display; must be the same names specified in the fetch: above in the wsapi data store
+          'FormattedID', 'Name', 'Owner', 'InvestmentCategory'
         ]
-    })
-});
-            app.add(dropDown);
-            console.log('dropDown menu', this);
+      });
 
-var myGrid = Ext.create('Rally.ui.grid.Grid', {
-            	store: myStoryStore,
-            	            // plugins : new Sch.plugin.ExcelExport(),
-                columnCfgs: [
-            	'FormattedID', 'Name', 'Owner'
-            	],
-            //     buttons : [
-            //     {
-            //         scale: 'large',
-            //         iconCls : 'excel',
-            //         text : 'Export schedule to Excel',
-            //         handler : function(btn) {
-            //             myGrid.exportToExcel();
-            //         },
-            //         scope : this
-            //     }
-            // ]
-            });
+      this.add(this.defectGrid);       // add the grid Component to the app-level Container (by doing this.add, it uses the app container)
 
-            console.log('my grid', myGrid);
-
-            app.add(myGrid);
-            console.log('what is this?', this);
     }
 
-// launch: function() {
-        //Write app code here
-        // console.log('Our First App');
-
-//         var myStore = Ext.create('Rally.data.wsapi.Store', {
-//     model: 'User Story',
-//     autoLoad: true,
-//     listeners: {
-//         load: function(myStore, myData, success) {
-//             //process data
-//             console.log('got data!', myStore, myData, success);
-
-//             var myGrid = Ext.create('Rally.ui.grid.Grid', {
-//             	store: myStore,
-//             	columnCfgs: [
-//             	'FormattedID', 'Name', 'Owner', 'ScheduleState'
-//             	]
-//             });
-
-//             console.log('my grid', myGrid);
-
-//             this.add(myGrid);
-//             console.log('what is this?', this);
-//         },
-//         scope: this
-//     },
-//     fetch: ['FormattedID', 'Name', 'Owner', 'ScheduleState']
-// });
-//     }
 });
