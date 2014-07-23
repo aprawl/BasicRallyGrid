@@ -474,9 +474,35 @@ jQuery.base64 = ( function( $ ) {
         });
     })(jQuery);
 
+        var customFields=[
+            {Type:'number',Name:'NPS',DisplayName:'NPS Impact',Editor:'rallynumberfield'},
+            {Type:'number',Name:'CAB',DisplayName:'CAB Priority',Editor:'rallynumberfield'},
+            {Type:'number',Name:'Uplift',DisplayName:'Revenue Uplift',Editor:'rallynumberfield'},
+            {Type:'number',Name:'NumProspects',DisplayName:'Number of Prospective Clients',Editor:'rallynumberfield'},
+            {Type:'number',Name:'ProvenGap',DisplayName:'Proven Gap',Editor:'rallynumberfield'},
+            {Type:'number',Name:'LaunchCostReduction',DisplayName:'Launch Cost Reduction Per Client',Editor:'rallynumberfield'},
+            {Type:'number',Name:'OperatingCostReduction',DisplayName:'Operating Cost Reduction Per Client',Editor:'rallynumberfield'},
+            {Type:'number',Name:'IncrementalGMVTPV',DisplayName:'Incremental GMV / TPV',Editor:'rallynumberfield'},
+            {Type:'number',Name:'CompetitiveScore',DisplayName:'Competitive Score',Editor:'rallynumberfield'},
+            {Type:'number',Name:'EstimatedLegalImpact',DisplayName:'Estimated Legal Impact',Editor:'rallynumberfield'},
+            {Type:'number',Name:'StrategicImpact',DisplayName:'Strategic Initiative Impact',Editor:'rallynumberfield'}
+        ];
 
-
-
+        function storeRow(store,data) {
+            var id=data.Id;
+            // Get row w/ associated ID
+            var record=store.findRecord('FormattedID',data['Id']);
+            record.set('Name',data['Name'])
+            // Grab all meta data that we care about
+            var metadata={};
+            for(i in customFields) {
+                field=customFields[i];
+                metadata[field.Name]=data[field.Name];
+            }
+            var json=JSON.stringify(metadata);
+            record.set('c_CustomMetadata',json);
+            record.save();
+        }
 
 Ext.define('CustomApp', {
     extend: 'Rally.app.App',      // The parent class manages the app 'lifecycle' and calls launch() when ready
@@ -484,7 +510,7 @@ Ext.define('CustomApp', {
 
 
     defectStore: undefined,       // app level references to the store and grid for easy access in various methods
-    defectGrid: undefined,
+    grid: undefined,
 
     // Entry Point to App
     launch: function() {
@@ -644,7 +670,7 @@ var testButton = Ext.create('Ext.Button', {
           listeners: {
               load: function(myStore, myData, success) {
                   console.log('got data!', myStore, myData);
-                  if (!this.defectGrid) {           // only create a grid if it does NOT already exist
+                  if (!this.grid) {           // only create a grid if it does NOT already exist
                     this._createGrid(myStore);      // if we did NOT pass scope:this below, this line would be incorrectly trying to call _createGrid() on the store which does not exist.
                   }
               },
@@ -656,16 +682,57 @@ var testButton = Ext.create('Ext.Button', {
     },
 
     // Create and Show a Grid of given defect
-    _createGrid: function(myDefectStore) {
+    _createGrid: function(dataStore) {
+// this.wsApiStore=store;
+var records = [];
+                    // Ext.Array.each(data, function(record) {
+                    //     var d=record.data;
+                    //     var metadata={};
+                    //     if(d.c_CustomMetadata!="") {
+                    //         metadata=JSON.parse(d.c_CustomMetadata);
+                    //     }
+                    //     // Extract custom fields from the metadata
+                    //     r={Id:d.FormattedID,Name:d.Name,MetaData:d.c_CustomMetadata};
+                    //     for(i in customFields) {
+                    //         field=customFields[i];
+                    //         r[field.Name]=metadata[field.Name];
+                    //     }
+                    //     records.push(r);
+                    // });
+var fields=[{name:'Id',type:'string'},{name:'Name',type:'string'}];
+                    for(i in customFields) {
+                        field=customFields[i];
+                        fields.push({name:field.Name,type:field.Type});
+                    }
+                    fields.push({name:'MetaData',type:'string'});
+                    Ext.define('GridModel', {
+                        extend: 'Ext.data.Model',
+                        fields: fields
+                    });
+                    // var dataStore=Ext.create('Ext.data.Store', {
+                    //     model: 'GridModel',
+                    //     data: records,
+                    // });
+                                        columns=[
+                        {text:'Id',dataIndex:'FormattedID'},
+                        {text:'Name',dataIndex:'Name',flex:1,editor:'rallytextfield'},
+                        {text:'Owner',dataIndex:'Owner'}
+                    ];
+                    for(i in customFields) {
+                        field=customFields[i];
+                        columns.push({text:field.DisplayName,dataIndex:field.Name,editor:field.Editor});
+                    }
 
-      this.defectGrid = Ext.create('Rally.ui.grid.Grid', {
-        store: myDefectStore,
-        columnCfgs: [         // Columns to display; must be the same names specified in the fetch: above in the wsapi data store
-          'FormattedID', 'Name', 'Owner', 'InvestmentCategory'
-        ]
+
+      this.grid = Ext.create('Rally.ui.grid.Grid', {
+        store: dataStore,
+        columnCfgs: columns,
+        // columnCfgs: [         // Columns to display; must be the same names specified in the fetch: above in the wsapi data store
+        //   'FormattedID', 'Name', 'Owner', 'InvestmentCategory'
+        // ]
       });
 
-      this.add(this.defectGrid);       // add the grid Component to the app-level Container (by doing this.add, it uses the app container)
+      this.add(this.grid);       // add the grid Component to the app-level Container (by doing this.add, it uses the app container)
 
     }
 
