@@ -682,23 +682,23 @@ var testButton = Ext.create('Ext.Button', {
     },
 
     // Create and Show a Grid of given defect
-    _createGrid: function(dataStore) {
-// this.wsApiStore=store;
+    _createGrid: function(store, data) {
+this.wsApiStore=store;
 var records = [];
-                    // Ext.Array.each(data, function(record) {
-                    //     var d=record.data;
-                    //     var metadata={};
-                    //     if(d.c_CustomMetadata!="") {
-                    //         metadata=JSON.parse(d.c_CustomMetadata);
-                    //     }
-                    //     // Extract custom fields from the metadata
-                    //     r={Id:d.FormattedID,Name:d.Name,MetaData:d.c_CustomMetadata};
-                    //     for(i in customFields) {
-                    //         field=customFields[i];
-                    //         r[field.Name]=metadata[field.Name];
-                    //     }
-                    //     records.push(r);
-                    // });
+                    Ext.Array.each(data, function(record) {
+                        var d=record.data;
+                        var metadata={};
+                        if(d.c_CustomMetadata!="") {
+                            metadata=JSON.parse(d.c_CustomMetadata);
+                        }
+                        // Extract custom fields from the metadata
+                        r={Id:d.FormattedID,Name:d.Name,MetaData:d.c_CustomMetadata};
+                        for(i in customFields) {
+                            field=customFields[i];
+                            r[field.Name]=metadata[field.Name];
+                        }
+                        records.push(r);
+                    });
 var fields=[{name:'Id',type:'string'},{name:'Name',type:'string'}];
                     for(i in customFields) {
                         field=customFields[i];
@@ -709,10 +709,10 @@ var fields=[{name:'Id',type:'string'},{name:'Name',type:'string'}];
                         extend: 'Ext.data.Model',
                         fields: fields
                     });
-                    // var dataStore=Ext.create('Ext.data.Store', {
-                    //     model: 'GridModel',
-                    //     data: records,
-                    // });
+                    var dataStore=Ext.create('Ext.data.Store', {
+                        model: 'GridModel',
+                        data: records,
+                    });
                                         columns=[
                         {text:'Id',dataIndex:'FormattedID'},
                         {text:'Name',dataIndex:'Name',flex:1,editor:'rallytextfield'},
