@@ -586,40 +586,40 @@ Ext.define('CustomApp', {
       console.log('selected iter', selectedIterRef);
       console.log('selected severity', selectedSeverityValue);
 
-var scoringFields = Ext.create('Ext.form.Panel', {
-    title: 'Scoring Weights',
-    width: 300,
-    bodyPadding: 10,
-    renderTo: Ext.getBody(),
-    items: [{
-        xtype: 'textfield',
-        name: 'npsimpact',
-        fieldLabel: 'NPS impact to # existing clients',
-        allowBlank: false  // requires a non-empty value
-    }, {
-        xtype: 'textfield',
-        name: 'cabpriority',
-        fieldLabel: 'CAB Priority',
-        vtype: 'email'  // requires value to be a valid email address format
-    }, {
-        xtype: 'textfield',
-        name: 'revuplift',
-        fieldLabel: 'Revenue Uplift to EE',
-        vtype: 'email'  // requires value to be a valid email address format
-    }, {
-        xtype: 'textfield',
-        name: 'prospects',
-        fieldLabel: '# of prospective clients from target list',
-        vtype: 'email'  // requires value to be a valid email address format
-    }, {
-        xtype: 'textfield',
-        name: 'winlossgap',
-        fieldLabel: 'Proven gap based on Win/loss analysis',
-        vtype: 'email'  // requires value to be a valid email address format
-    }]
-});
-            this.add(scoringFields);
-            console.log('scoringFields', this);
+// var scoringFields = Ext.create('Ext.form.Panel', {
+//     title: 'Scoring Weights',
+//     width: 300,
+//     bodyPadding: 10,
+//     renderTo: Ext.getBody(),
+//     items: [{
+//         xtype: 'textfield',
+//         name: 'npsimpact',
+//         fieldLabel: 'NPS impact to # existing clients',
+//         allowBlank: false  // requires a non-empty value
+//     }, {
+//         xtype: 'textfield',
+//         name: 'cabpriority',
+//         fieldLabel: 'CAB Priority',
+//         vtype: 'email'  // requires value to be a valid email address format
+//     }, {
+//         xtype: 'textfield',
+//         name: 'revuplift',
+//         fieldLabel: 'Revenue Uplift to EE',
+//         vtype: 'email'  // requires value to be a valid email address format
+//     }, {
+//         xtype: 'textfield',
+//         name: 'prospects',
+//         fieldLabel: '# of prospective clients from target list',
+//         vtype: 'email'  // requires value to be a valid email address format
+//     }, {
+//         xtype: 'textfield',
+//         name: 'winlossgap',
+//         fieldLabel: 'Proven gap based on Win/loss analysis',
+//         vtype: 'email'  // requires value to be a valid email address format
+//     }]
+// });
+//             this.add(scoringFields);
+//             console.log('scoringFields', this);
 
 var testButton = Ext.create('Ext.Button', {
     text     : 'Export Table',
@@ -671,7 +671,7 @@ var testButton = Ext.create('Ext.Button', {
               load: function(myStore, myData, success) {
                   console.log('got data!', myStore, myData);
                   if (!this.grid) {           // only create a grid if it does NOT already exist
-                    this._createGrid(myStore);      // if we did NOT pass scope:this below, this line would be incorrectly trying to call _createGrid() on the store which does not exist.
+                    this._createGrid(myStore, myData);      // if we did NOT pass scope:this below, this line would be incorrectly trying to call _createGrid() on the store which does not exist.
                   }
               },
               scope: this                         // This tells the wsapi data store to forward pass along the app-level context into ALL listener functions
@@ -692,14 +692,14 @@ var records = [];
                             metadata=JSON.parse(d.c_CustomMetadata);
                         }
                         // Extract custom fields from the metadata
-                        r={Id:d.FormattedID,Name:d.Name,MetaData:d.c_CustomMetadata};
+                        r={Id:d.FormattedID,Name:d.Name,Owner:d.Owner,MetaData:d.c_CustomMetadata};
                         for(i in customFields) {
                             field=customFields[i];
                             r[field.Name]=metadata[field.Name];
                         }
                         records.push(r);
                     });
-var fields=[{name:'Id',type:'string'},{name:'Name',type:'string'}];
+var fields=[{name:'Id',type:'string'},{name:'Name',type:'string'},{name:'Owner',type:'string'}];
                     for(i in customFields) {
                         field=customFields[i];
                         fields.push({name:field.Name,type:field.Type});
